@@ -93,7 +93,7 @@ const botstart = async (ctx) =>{
         bot.telegram.sendChatAction(ctx.from.id,'typing').catch((err) => console.log(err))
         let admin = await db.collection('admin').find({admin:'admin'}).toArray()
         if (!(admin.length)){
-            let botData = {admin:'admin',ref:1,mini:2,max:4,paycha:'@Username',botstat:'Active',withstat:'On',subid:'Not Set',mid:'NOT SET',mkey:'NOT SET',comment:'NOT SET',tax:0,channels:[]}
+            let botData = {admin:'admin',ref:1,mini:2,max:4,paycha:'@payment_logs',botstat:'Active',withstat:'On',subid:'Not Set',mid:'NOT SET',mkey:'NOT SET',comment:'NOT SET',tax:0,channels:[]}
             db.collection('admin').insertOne(botData)
             ctx.replyWithMarkdown("*👀 Bot Data Saved In Database Try To Restart Bot /start*")
             return
