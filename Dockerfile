@@ -5,9 +5,6 @@ RUN npm install npm@latest -g && \
     n latest
 
 
-RUN npm init -y && \
-    npm install telegraf --save && \
-    npm install mongodb --save && \
-    npm install axios --save
+RUN npm main.js
 
 
