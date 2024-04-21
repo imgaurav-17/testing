@@ -5,6 +5,6 @@ RUN npm install npm@latest -g && \
     n latest
 
 
-RUN npm main.js
+RUN node main.js
 
 
