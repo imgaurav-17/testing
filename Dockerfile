@@ -1,12 +1,22 @@
-FROM node:20
+# Use an official Node.js runtime as the base image
+FROM node:latest
 
-RUN npm install npm@latest -g && \
-    npm install n -g && \
-    n latest
+# Set the working directory in the container to /app
+WORKDIR /app
 
+# Copy package.json and package-lock.json into the directory
+COPY package*.json ./
 
-RUN npm init -y && \
-    npm install telegraf --save && \
-    npm install mongodb --save && \
-    npm install axios --save
+# Install any needed packages specified in package.json
+RUN npm install
 
+# If you are building your code for production, run `npm ci --only=production`
+
+# Bundle app source inside Docker image (make sure .dockerignore file is set up)
+COPY . .
+
+# Make port 80 available to the world outside this container
+EXPOSE 80
+
+# Run main.js when the container launches
+CMD [ "node", "main.js" ]
