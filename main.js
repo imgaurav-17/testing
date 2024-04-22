@@ -542,24 +542,13 @@ bot.action('continue',async (ctx) =>{
         let tax = admin[0].tax * 1 
         let finalamo = (toWith/100) * tax
         let amo =  parseFloat(toWith - finalamo)
-        let swg = admin[0].subid
-        let mkey = admin[0].mkey 
-        let mid = admin[0].mid 
-        let comment = admin[0].comment 
-        let wallet = uData[0].wallet
         var finalBal = parseFloat(bal) - parseFloat(toWith)
         db.collection('info').updateOne({user:ctx.from.id},{$set:{'balance':finalBal}})
-        var url = 'https://job2all.xyz/api/index.php?mid='+mid+'&mkey='+mkey+'&guid='+swg+'&mob='+wallet+'&amount='+amo.toString()+'&info='+comment;
-        var res = await axios.post(url)
-        if (res.data == "Payment Succesful Transfer\n\n\n"){
-            var text = "*🟢 Withdraw Request Processed 🟢\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`"
-            var payText = "*🟢 Withdraw Request Processed 🟢\n👷 User: *["+ctx.from.id+"](tg://user?id="+ctx.from.id+")*\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`\n\n*🟢 Bot: @"+ctx.botInfo.username+"*"
-        }else{
-            var payText = "*🚫 Withdrawal Request Failed\n\n👷 User: *["+ctx.from.id+"](tg://user?id="+ctx.from.id+")*\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`*\n\n⛔️ Reason: *`"+res.data+"`"
-            var text = "*🚫 Withdrawal Request Failed\n⛔️ Reason: *`"+res.data+"`"
-        }
+        
+        // Removed API call and added manual message
+        var text = "*🟢 Withdraw Request Processed 🟢\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ You will receive your payment soon."
         ctx.replyWithMarkdown(text,{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
-        bot.telegram.sendMessage(admin[0].paycha,payText,{parse_mode:'Markdown'}).catch(e => console.log(e.response.description))
+        
         let pData = await db.collection('admin').find({Payout:'Payout'}).toArray()
         if(!pData.length){
             var TPay = 0;
@@ -569,14 +558,10 @@ bot.action('continue',async (ctx) =>{
         }
         var finalPay = parseFloat(toWith) + parseFloat(TPay)
         db.collection('admin').updateOne({Payout:'Payout'},{$set:{value:finalPay}})
-
-
     }catch(e){
 
     }
 })
-
-
 
 //Minimum Withdraw Scene
 mini.on('text', async (ctx) =>{
