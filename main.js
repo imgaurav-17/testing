@@ -1,3 +1,14 @@
+const http = require('http');
+
+// Create a server object
+http.createServer((req, res) => {
+  res.write('Hello World!'); // Write a response to the client
+  res.end(); // End the response
+}).listen(8080); // The server object listens on port 8080
+
+
+
+
 const { Telegraf, session, Extra, Markup, Scenes } = require('telegraf');
 const { BaseScene, Stage } = Scenes
 const { enter, leave } = Stage
@@ -529,13 +540,13 @@ bot.action('continue',async (ctx) =>{
         await db.collection('withdraw').updateOne({user:ctx.from.id},{$set:{'toWith':0}})      
         var toWith = wData[0].toWith * 1
         if(toWith == 0){            
-            ctx.replyWithMarkdown("*❌No Amount Available For Withdrawal*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
+            ctx.replyWithMarkdown("\\*❌No Amount Available For Withdrawal\\*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
             return
         }
         let uData = await db.collection('info').find({user:ctx.from.id}).toArray()
         var bal = uData[0].balance * 1
         if(bal < toWith){
-            ctx.replyWithMarkdown("*❌Withdrawal Failed*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
+            ctx.replyWithMarkdown("\\*❌Withdrawal Failed\\*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
             return
         }
         let admin = await db.collection('admin').find({admin:'admin'}).toArray()
@@ -545,9 +556,17 @@ bot.action('continue',async (ctx) =>{
         var finalBal = parseFloat(bal) - parseFloat(toWith)
         db.collection('info').updateOne({user:ctx.from.id},{$set:{'balance':finalBal}})
         
+        // Log the user ID who requested the withdrawal
+        console.log(`User with ID ${ctx.from.id} requested a withdrawal.`);
+        
         // Removed API call and added manual message
-        var text = "*🟢 Withdraw Request Processed 🟢\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ You will receive your payment soon."
+        var text = "\\*🟢 Withdraw Request Processed 🟢\\*\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ You will receive your payment soon."
         ctx.replyWithMarkdown(text,{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
+        
+        // Send a message to the payment log channel
+        var userIdentifier = ctx.from.username ? `@${ctx.from.username}` : `ID ${ctx.from.id}`;
+        var logText = `User with ${userIdentifier} requested a withdrawal of ${toWith} ${curr}. After applying a tax of ${tax}%, the final amount is ${amo} ${curr}.`
+        ctx.telegram.sendMessage('@payment_logs', logText)
         
         let pData = await db.collection('admin').find({Payout:'Payout'}).toArray()
         if(!pData.length){
@@ -559,9 +578,12 @@ bot.action('continue',async (ctx) =>{
         var finalPay = parseFloat(toWith) + parseFloat(TPay)
         db.collection('admin').updateOne({Payout:'Payout'},{$set:{value:finalPay}})
     }catch(e){
-
+        console.error(e);
     }
 })
+
+
+
 
 //Minimum Withdraw Scene
 mini.on('text', async (ctx) =>{
