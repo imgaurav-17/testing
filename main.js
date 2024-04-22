@@ -532,49 +532,35 @@ bot.action('continue',async (ctx) =>{
             ctx.replyWithMarkdown("*❌No Amount Available For Withdrawal*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
             return
         }
-        let uData = await db.collection('info').find({user:ctx.from.id}).toArray()
-        var bal = uData[0].balance * 1
-        if(bal < toWith){
-            ctx.replyWithMarkdown("*❌Withdrawal Failed*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
-            return
-        }
-        let admin = await db.collection('admin').find({admin:'admin'}).toArray()
-        let tax = admin[0].tax * 1 
-        let finalamo = (toWith/100) * tax
-        let amo =  parseFloat(toWith - finalamo)
-        let swg = admin[0].subid
-        let mkey = admin[0].mkey 
-        let mid = admin[0].mid 
-        let comment = admin[0].comment 
-        let wallet = uData[0].wallet
-        var finalBal = parseFloat(bal) - parseFloat(toWith)
-        db.collection('info').updateOne({user:ctx.from.id},{$set:{'balance':finalBal}})
-        var url = 'https://job2all.xyz/api/index.php?mid='+mid+'&mkey='+mkey+'&guid='+swg+'&mob='+wallet+'&amount='+amo.toString()+'&info='+comment;
-        var res = await axios.post(url)
-        if (res.data == "Payment Succesful Transfer\n\n\n"){
-            var text = "*🟢 Withdraw Request Processed 🟢\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`"
-            var payText = "*🟢 Withdraw Request Processed 🟢\n👷 User: *["+ctx.from.id+"](tg://user?id="+ctx.from.id+")*\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`\n\n*🟢 Bot: @"+ctx.botInfo.username+"*"
-        }else{
-            var payText = "*🚫 Withdrawal Request Failed\n\n👷 User: *["+ctx.from.id+"](tg://user?id="+ctx.from.id+")*\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`*\n\n⛔️ Reason: *`"+res.data+"`"
-            var text = "*🚫 Withdrawal Request Failed\n⛔️ Reason: *`"+res.data+"`"
-        }
-        ctx.replyWithMarkdown(text,{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
-        bot.telegram.sendMessage(admin[0].paycha,payText,{parse_mode:'Markdown'}).catch(e => console.log(e.response.description))
-        let pData = await db.collection('admin').find({Payout:'Payout'}).toArray()
-        if(!pData.length){
-            var TPay = 0;
-            db.collection('admin').insertOne({Payout:'Payout',value:TPay})
-        }else{
-            var TPay = pData[0].value
-        }
-        var finalPay = parseFloat(toWith) + parseFloat(TPay)
-        db.collection('admin').updateOne({Payout:'Payout'},{$set:{value:finalPay}})
+      let uData = await db.collection('info').find({user:ctx.from.id}).toArray()
+var bal = uData[0].balance * 1
+if(bal < toWith){
+    ctx.replyWithMarkdown("*❌Withdrawal Failed*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
+    return
+}
+let admin = await db.collection('admin').find({admin:'admin'}).toArray()
+let tax = admin[0].tax * 1 
+let finalamo = (toWith/100) * tax
+let amo =  parseFloat(toWith - finalamo)
+var finalBal = parseFloat(bal) - parseFloat(toWith)
+db.collection('info').updateOne({user:ctx.from.id},{$set:{'balance':finalBal}})
 
+var text = "*🟢 Withdraw Request Received 🟢\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`\n\nYou will receive your payment soon."
+var payText = "*🟢 Withdraw Request Received 🟢\n👷 User: *"+ctx.from.id+"*\n\n💰 Amount: "+toWith+" "+curr+" (Tax : %"+tax+")\n🗂️ Paytm Wallet: *`"+wallet+"`\n\n*🟢 Bot: @"+ctx.botInfo.username+"*"
 
-    }catch(e){
+ctx.replyWithMarkdown(text,{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
+bot.telegram.sendMessage(admin[0].paycha,payText,{parse_mode:'Markdown'}).catch(e => console.log(e.response.description))
 
-    }
-})
+let pData = await db.collection('admin').find({Payout:'Payout'}).toArray()
+if(!pData.length){
+    var TPay = 0;
+    db.collection('admin').insertOne({Payout:'Payout',value:TPay})
+}else{
+    var TPay = pData[0].value
+}
+var finalPay = parseFloat(toWith) + parseFloat(TPay)
+db.collection('admin').updateOne({Payout:'Payout'},{$set:{value:finalPay}})
+
 
 
 
