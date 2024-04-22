@@ -15,8 +15,10 @@ RUN npm install
 # Bundle app source inside Docker image (make sure .dockerignore file is set up)
 COPY . .
 
-# Make port 80 available to the world outside this container
-EXPOSE 80
+
 
 # Run main.js when the container launches
 CMD [ "node", "main.js" ]
+
+# Make port 80 available to the world outside this container
+EXPOSE 8080
