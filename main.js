@@ -17,7 +17,7 @@ const rateLimit = require('telegraf-ratelimit');
 const mongo = require('mongodb').MongoClient;
 const axios = require('axios')
 const { token , admins , curr} = require('./details')
-const mongo_url = "mongodb+srv://firegod:Gaurav912@cluster0.3awyp8z.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+const mongo_url = "mongodb+srv://firegod:firegod@firegod.7yuepvj.mongodb.net/?retryWrites=true&w=majority&appName=firegod"
 const bot = new Telegraf(token);
 
 //Scenes Register 
@@ -96,7 +96,7 @@ mongo.connect(mongo_url, { useUnifiedTopology: true } , (err,client) =>{
 let mainkey = [
     ['💰 Account','👫 Invite'],
     ['📊 Statistics'],
-    ['🗂️ Wallet','💵 Withdraw']
+    ['🗂️ UPI id','💵 Withdraw']
 ]
 
 const botstart = async (ctx) =>{
@@ -367,7 +367,7 @@ bot.hears('📊 Statistics',async (ctx) =>{
 })
 
 //Wallet Button Code
-bot.hears('🗂️ Wallet', async (ctx) =>{
+bot.hears('🗂️ UPI id', async (ctx) =>{
     try{
         let admin = await db.collection('admin').find({admin:'admin'}).toArray()
         if(ctx.message.chat.type != 'private'){
@@ -388,7 +388,7 @@ bot.hears('🗂️ Wallet', async (ctx) =>{
             sendJoined(ctx,admin)
             return
         }
-        ctx.replyWithMarkdown("*💡 Send Your Paytm Number*",{reply_markup:{keyboard:[
+        ctx.replyWithMarkdown("*💡 Send Your UPI id*",{reply_markup:{keyboard:[
             ['🔙 Back']
         ],resize_keyboard:true}})
         await ctx.scene.enter('getwallet')
@@ -406,17 +406,13 @@ getwallet.on('text', async (ctx) =>{
             starter(ctx)
             await ctx.scene.leave(name)
             return
-        }else if(isNaN(ctx.message.text)){
-            ctx.replyWithMarkdown("*🚫 Not A Valid Paytm Number*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
-            await ctx.scene.leave(name)
-            return
-        }else if(ctx.message.text.length != 10){
-            ctx.replyWithMarkdown("*🚫 Not A Valid Paytm Number*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
+        }else if(!ctx.message.text.includes('@')){
+            ctx.replyWithMarkdown("*🚫 Not A Valid UPI ID*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
             await ctx.scene.leave(name)
             return
         }else{
-            db.collection('info').updateOne({user:ctx.from.id},{$set:{'wallet':ctx.message.text}})
-            ctx.replyWithMarkdown("*✅ Your Paytm Number Updated To "+ctx.message.text+"*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
+            db.collection('info').updateOne({user:ctx.from.id},{$set:{'userUPI':ctx.message.text}})
+            ctx.replyWithMarkdown("*✅ Your UPI ID Updated To "+ctx.message.text+"*",{reply_markup:{keyboard:mainkey,resize_keyboard:true}})
             await ctx.scene.leave(name)
         }
     }catch(e){
@@ -463,8 +459,8 @@ bot.hears('💵 Withdraw',async (ctx) =>{
         ctx.replyWithMarkdown('*⚠️ Must Own AtLeast '+mini.toFixed(3)+' '+curr+'*')
         return
     }
-    if(!('wallet' in data[0])){
-        ctx.replyWithMarkdown('*⛔️ Paytm Number Not Set*')
+    if(!('userUPI' in data[0])){
+        ctx.replyWithMarkdown('*⛔️ UPI id is Not Set*')
         return
     }
     ctx.replyWithMarkdown("*💡 Send Amount To Withdraw*",{reply_markup:{keyboard:[
@@ -511,7 +507,7 @@ onwith.on('text',async (ctx) =>{
         } else{
             await ctx.scene.leave(name)
             await db.collection('withdraw').updateOne({user:ctx.from.id},{$set:{'toWith':parseFloat(ctx.message.text)}})
-            let text = "*🚨 Withdrawal Request Confirmation\n\n💰 Amount: "+ctx.message.text+" "+curr+"\n🗂️Paytm Number:* `"+data[0].wallet+"`*\n\n🟢Click On '✅ Continue' To Confirm*"
+            let text = "*🚨 Withdrawal Request Confirmation\n\n💰 Amount: "+ctx.message.text+" "+curr+"\n🗂️UPI id:* `"+data[0].userUPI+"`*\n\n🟢Click On '✅ Continue' To Confirm*"
             ctx.replyWithMarkdown(text,{reply_markup:{inline_keyboard:[
                 [{text:'✅ Continue',callback_data:'continue'},{text:'⛔️ Reject',callback_data:'reject'}]
             ]}})            
@@ -565,7 +561,11 @@ bot.action('continue',async (ctx) =>{
         
         // Send a message to the payment log channel
         var userIdentifier = ctx.from.username ? `@${ctx.from.username}` : `ID ${ctx.from.id}`;
-        var logText = `User with ${userIdentifier} requested a withdrawal of ${toWith} ${curr}. After applying a tax of ${tax}%, the final amount is ${amo} ${curr}.`
+
+        // Retrieve the user's UPI ID from the database
+        var userUPI = await db.collection('info').findOne({ user: ctx.from.id }).then(doc => doc.userUPI);
+
+        var logText = `User with ${userIdentifier} requested a withdrawal of ${toWith} ${curr}. After applying a tax of ${tax}%, the final amount is ${amo} ${curr}. The UPI ID for the transaction is ${userUPI}.`
         ctx.telegram.sendMessage('@payment_logs', logText)
         
         let pData = await db.collection('admin').find({Payout:'Payout'}).toArray()
@@ -742,6 +742,7 @@ mkey.on('text',async (ctx)=>{
         senderr(e)
     }
 })
+
 
 //Pay Comment Scene
 comment.on('text',async (ctx)=>{
@@ -1287,3 +1288,34 @@ function arrayRemove(arr, value) {
         return ele != value;
     });
 }
+
+bot.command('sendto', async (ctx) => {
+    // Check if the sender is an admin
+    if (admins.includes(ctx.from.id)) {
+        // Split the message text by spaces
+        let parts = ctx.message.text.split(' ');
+
+        // Check if the command has the correct number of parts
+        if (parts.length < 3) {
+            ctx.reply('Usage: /sendto USER_ID Your custom message goes here');
+            return;
+        }
+
+        // The second part should be the user ID
+        let userId = parts[1];
+
+        // The rest of the parts make up the message
+        let message = parts.slice(2).join(' ');
+
+        // Check if the user ID and message are valid
+        if (!userId || !message) {
+            ctx.reply('Error: User ID or message is missing');
+            return;
+        }
+
+        // Send the message to the specified user
+        ctx.telegram.sendMessage(userId, message);
+    } else {
+        ctx.reply('Sorry, you must be an admin to use this command.');
+    }
+});
