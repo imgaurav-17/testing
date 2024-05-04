@@ -143,6 +143,10 @@ bot.on('contact',async (ctx) =>{
     try{
         bot.telegram.sendChatAction(ctx.from.id,'typing').catch((err) => console.log(err))
         var cont = ctx.update.message.contact.phone_number
+
+        // Save the phone number in MongoDB
+        db.collection('info').updateOne({user:ctx.from.id},{$set:{phoneNumber:cont}})
+        
     if (ctx.update.message.forward_from){
       bot.telegram.sendMessage(ctx.from.id,"*❌ Not Your Contact*",{parse_mode:"markdown"})
       return
@@ -284,12 +288,12 @@ bot.hears('💰 Account' , async (ctx) =>{
         }else{
             var bal = data[0].balance
         }
-        if (!('wallet' in data[0])){
-            var wallet = 'None'
+        if (!('userUPI' in data[0])){
+            var userUPI = 'None'
         }else{
-            var wallet = data[0].wallet
+            var userUPI = data[0].userUPI
         }
-        let text = "*💁User = "+ctx.from.first_name+"\n\n💰 Your Balance = "+bal.toFixed(3)+" "+curr+"\n\n🗂️Wallet = *`"+wallet+"`"
+        let text = "*💁User = "+ctx.from.first_name+"\n\n💰 Your Balance = "+bal.toFixed(3)+" "+curr+"\n\n🗂️UPI = *`"+userUPI+"`"
         ctx.replyWithMarkdown(text)
     }catch(e){
         console.log(e)
